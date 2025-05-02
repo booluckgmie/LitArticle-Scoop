@@ -239,7 +239,7 @@ export default function HomePage() {
     } else {
        setStatusMessage({
         type: 'error',
-        message: `Could not download any PDFs (${failedDownloads} failed). This is often due to browser security restrictions (CORS), paywalls, or invalid links. Check the browser console (F12) for specific errors. Try opening links individually or using the 'Copy Links' button with a download manager.`
+        message: `Could not download any PDFs (${failedDownloads} failed). If some PDFs were downloaded then that was the success number. This is often due to browser security restrictions (CORS), paywalls, or invalid links. Using 'Copy Links' and a download manager is often more reliable for large numbers of downloads. ZIP downloads are experimental and often fail. Check the browser console (F12) for specific errors.`
       });
     }
   };
