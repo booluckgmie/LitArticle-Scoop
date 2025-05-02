@@ -80,7 +80,7 @@ export default function HomePage() {
       .filter(doi => doi.startsWith('10.') && doi.includes('/')); // Keep only valid-looking DOIs
 
     // 2. Get unique DOIs
-    const uniqueDois = [...new Set(dois)];
+    const uniqueDois = Array.from(new Set(dois));
 
     // 3. Clear previous results and status
     setResults([]);
