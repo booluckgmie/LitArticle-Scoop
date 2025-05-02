@@ -12,6 +12,8 @@ const alertVariants = cva(
         default: "bg-background text-foreground",
         destructive:
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive dark:text-red-400 dark:[&>svg]:text-red-400", // Adjusted dark mode destructive text/icon color
+         // Added info variant - using default background/text for now, can customize later
+         // Example customization: border-blue-500 text-blue-700 dark:border-blue-700 dark:text-blue-300 [&>svg]:text-blue-700 dark:[&>svg]:text-blue-300"
       },
     },
     defaultVariants: {
