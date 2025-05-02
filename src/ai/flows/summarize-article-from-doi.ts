@@ -9,11 +9,14 @@
  */
 
 import {ai} from '@/ai/ai-instance';
-import {downloadArticle} from '@/services/article-downloader';
+// Note: downloadArticle service is currently not used as link finding is separate.
+// import {downloadArticle} from '@/services/article-downloader';
 import {z} from 'genkit';
 
 const SummarizeArticleInputSchema = z.object({
   doi: z.string().describe('The DOI of the article to summarize.'),
+  // We might need the URL if we were to fetch content, but currently passing placeholder content.
+  // articleUrl: z.string().url().describe('The URL of the article PDF.'),
 });
 export type SummarizeArticleInput = z.infer<typeof SummarizeArticleInputSchema>;
 
@@ -31,15 +34,15 @@ const summarizeArticlePrompt = ai.definePrompt({
   input: {
     schema: z.object({
       doi: z.string().describe('The DOI of the article to summarize.'),
-      articleContent: z.string().describe('The content of the article to summarize.'),
+      articleContent: z.string().describe('The extracted text content of the article to summarize.'),
     }),
   },
   output: {
     schema: z.object({
-      summary: z.string().describe('A summary of the key findings of the research paper.'),
+      summary: z.string().describe('A concise summary of the key findings of the research paper based *only* on the provided content.'),
     }),
   },
-  prompt: `You are an expert research paper summarizer. Please provide a concise summary of the key findings of the following research paper.\n\nArticle DOI: {{{doi}}}\nArticle Content: {{{articleContent}}}`,
+  prompt: `You are an expert research paper summarizer. Based *only* on the provided article content below, provide a concise summary of the key findings. Do not use external knowledge.\n\nArticle DOI: {{{doi}}}\n\nArticle Content:\n{{{articleContent}}}`,
 });
 
 const summarizeArticleFlow = ai.defineFlow<
@@ -52,21 +55,25 @@ const summarizeArticleFlow = ai.defineFlow<
     outputSchema: SummarizeArticleOutputSchema,
   },
   async input => {
-    const downloadResult = await downloadArticle(input.doi);
+    // TODO: Implement robust fetching and parsing of PDF content from a URL.
+    // This requires a separate service or library capable of handling PDF text extraction.
+    // The URL would likely come from the 'findArticleLinkFromDoi' flow's output.
+    // For now, we pass placeholder text.
+    const articleContent = `Placeholder content for article with DOI ${input.doi}. In a real implementation, this would be the extracted text from the downloaded PDF. The paper discusses various important findings related to its subject matter, presenting data and analysis to support its conclusions. Key results indicate significant trends and correlations, contributing valuable insights to the field.`;
 
-    if (!downloadResult.success || !downloadResult.downloadUrl) {
-      throw new Error(`Failed to download article with DOI ${input.doi}: ${downloadResult.error}`);
+    if (!articleContent) {
+        throw new Error(`Could not retrieve or parse content for article with DOI ${input.doi}.`);
     }
 
-    // TODO: Instead of downloading, read the article content from the URL.
-    // For now, we pass a placeholder since downloading the content is out of scope.
-    const articleContent = `Article content for DOI ${input.doi} goes here. Pretend it's very long.`;
-
     const {output} = await summarizeArticlePrompt({
-      doi: input.doi, 
+      doi: input.doi,
       articleContent: articleContent,
     });
-    
-    return output!;
+
+    if (!output) {
+        throw new Error(`AI failed to generate a summary for DOI ${input.doi}.`);
+    }
+
+    return output;
   }
 );
