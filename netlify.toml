@@ -3,3 +3,4 @@ toml
   command = "npm run build"
   publish = ".next"
   functions = ".next/server"
+toml
