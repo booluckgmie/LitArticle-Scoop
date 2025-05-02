@@ -1,4 +1,17 @@
 [build]
   command = "npm run build"
   publish = ".next"
-  functions = ".next/server"
+
+[functions]
+  # Ensure Netlify Functions handle App Router routes correctly
+  directory = ".next/server"
+  # Explicitly set the node bundler for potentially better compatibility
+  node_bundler = "esbuild"
+
+# Optional: Specify Node.js version if not using .nvmrc
+# [build.environment]
+#   NODE_VERSION = "20"
+
+[[plugins]]
+  # Essential plugin for Next.js on Netlify
+  package = "@netlify/plugin-nextjs"

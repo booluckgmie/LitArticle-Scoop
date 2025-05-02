@@ -167,20 +167,28 @@ export default function HomePage() {
 
     // Use Promise.allSettled to attempt all downloads, even if some fail
     const downloadPromises = validResultsToZip.map(result =>
-      fetch(result.url!) // Fetch the PDF URL
+      fetch(result.url!, { mode: 'cors' }) // Explicitly set CORS mode if needed, though 'no-cors' might hide errors but allow opaque responses
         .then(response => {
           if (!response.ok) {
             // Check if response status indicates an error (e.g., 404, 403, 500)
-             throw new Error(`HTTP error! status: ${response.status} for ${result.doi}`);
+             // Log specific error, potentially CORS-related
+             if (response.type === 'opaque') {
+                 console.warn(`Received opaque response for ${result.doi}. Cannot verify content. Likely CORS issue.`);
+                 // Treat opaque as failure for zipping, as content is inaccessible
+                 throw new Error(`Opaque response (likely CORS) for ${result.doi}`);
+             } else {
+                 throw new Error(`HTTP error! status: ${response.status} for ${result.doi}`);
+             }
           }
-           // Try to get the blob only if response is ok
+           // Try to get the blob only if response is ok and not opaque
           return response.blob();
         })
         .then(blob => {
           // Check if the blob type suggests it's a PDF, otherwise might be an HTML error page
-          if (blob.type !== 'application/pdf') {
-             console.warn(`Downloaded content for ${result.doi} does not appear to be a PDF (type: ${blob.type}). It might be an error page or require login.`);
-             // Optionally throw an error here if you strictly want only PDFs
+          // This check might be less reliable with CORS issues.
+          if (blob.type !== 'application/pdf' && !blob.type.startsWith('application/octet-stream')) { // Allow octet-stream as some servers send PDF this way
+             console.warn(`Downloaded content for ${result.doi} might not be a PDF (type: ${blob.type}). It could be an error page or require login. Adding to ZIP anyway.`);
+             // Decide whether to throw an error or proceed cautiously
              // throw new Error(`Content for ${result.doi} is not a PDF (type: ${blob.type})`);
           }
            // Add the blob to the zip file
@@ -207,7 +215,8 @@ export default function HomePage() {
         if (outcome.status === 'fulfilled' && outcome.value?.status === 'rejected') {
           console.error(`Download failed for DOI ${outcome.value.doi}: ${outcome.value.reason}`);
         } else if (outcome.status === 'rejected') {
-           console.error(`Download promise rejected: ${outcome.reason}`); // Should ideally include DOI if possible
+           // If the outer promise rejected, it might be a network error before fetch even started
+           console.error(`Download promise rejected: ${outcome.reason}`); // May need more context to link to DOI if fetch failed early
         }
       }
     });
@@ -221,11 +230,11 @@ export default function HomePage() {
         saveAs(content, 'LitArticle_Scoop_Downloads.zip');
          setStatusMessage({
           type: 'success',
-          message: `Successfully downloaded ${successfulDownloads} PDF(s). ${failedDownloads > 0 ? `${failedDownloads} download(s) failed (check console for details - likely due to CORS or login requirements).` : ''} ZIP file saved.`
+          message: `Successfully added ${successfulDownloads} file(s) to the ZIP. ${failedDownloads > 0 ? `${failedDownloads} download(s) failed (check console for details - likely due to CORS or login requirements).` : ''} ZIP file generated.`
         });
       } catch (zipError) {
          console.error('Failed to generate ZIP file:', zipError);
-        setStatusMessage({ type: 'error', message: 'Failed to create the ZIP file after downloading.' });
+        setStatusMessage({ type: 'error', message: 'Failed to create the ZIP file after attempting downloads.' });
       }
     } else {
        setStatusMessage({
