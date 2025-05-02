@@ -76,15 +76,23 @@ export function DoiResultsTable({ results }: DoiResultsTableProps) {
 
   // Function to handle direct download
   const handleDownload = (url: string, doi: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    // Suggest a filename based on the DOI
-    link.download = `${doi}.pdf`;
-    // Append to body to ensure click works in all browsers
-    document.body.appendChild(link);
-    link.click();
-    // Clean up by removing the link
-    document.body.removeChild(link);
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      // Suggest a filename based on the DOI
+      link.download = `${doi}.pdf`;
+      // Add rel attribute for security best practice
+      link.rel = 'noopener noreferrer';
+      // Append to body to ensure click works in all browsers
+      document.body.appendChild(link);
+      link.click();
+      // Clean up by removing the link
+      document.body.removeChild(link);
+    } catch (error) {
+        console.error(`Failed to initiate download for ${doi}:`, error);
+        // Optionally notify user about the failure (e.g., using a toast)
+        // e.g., toast({ title: "Download Error", description: `Could not start download for ${doi}.` variant: "destructive" });
+    }
   };
 
 
@@ -147,4 +155,3 @@ export function DoiResultsTable({ results }: DoiResultsTableProps) {
     </div>
   );
 }
-

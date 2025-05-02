@@ -10,6 +10,8 @@ export function downloadAllPdfs(files: { url: string; filename: string }[], dela
         const link = document.createElement('a');
         link.href = file.url;
         link.download = file.filename;
+        // Add rel attribute for security best practice
+        link.rel = 'noopener noreferrer';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -17,6 +19,8 @@ export function downloadAllPdfs(files: { url: string; filename: string }[], dela
       } catch (error) {
         console.error(`Failed to initiate download for ${file.filename}:`, error);
         // Optionally, notify the user about the specific failure
+        // Consider using a toast notification here if you have a UI feedback system integrated
+        // e.g., toast({ title: "Download Error", description: `Could not start download for ${file.filename}.` variant: "destructive" });
       }
     }, index * delayMs); // Apply delay based on index
   });
